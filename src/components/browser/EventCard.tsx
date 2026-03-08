@@ -15,7 +15,7 @@ const EventCard = ({ event }: EventCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
   const isClosed = event.closed;
-  const markets = event.markets;
+  const markets = event.markets.filter((m) => m.volume > 0);
 
   const tagLabels = event.tags?.filter((t) => t.label !== "All").slice(0, 5).map((t) => t.label) || [];
 
