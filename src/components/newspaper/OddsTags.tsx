@@ -7,25 +7,42 @@ interface OddsTagsProps {
   className?: string;
 }
 
-const OddsTags = ({ outcomes, prices, limit = 4, className }: OddsTagsProps) => {
+const COLORS = [
+  "bg-primary/15 text-primary",
+  "bg-secondary/15 text-secondary",
+  "bg-accent/15 text-accent-foreground",
+  "bg-warning/15 text-warning-foreground",
+  "bg-success/15 text-success-foreground",
+  "bg-destructive/15 text-destructive",
+];
+
+const OddsTags = ({ outcomes, prices, limit = 6, className }: OddsTagsProps) => {
+  // Sort by probability descending but keep original pairs
+  const paired = outcomes.map((o, i) => ({ outcome: o, price: prices[i] || 0 }));
+  paired.sort((a, b) => b.price - a.price);
+
   return (
     <div className={cn("flex gap-2 flex-wrap", className)}>
-      {outcomes.slice(0, limit).map((o, i) => {
-        const p = prices[i] || 0;
-        return (
-          <span
-            key={o}
-            className={cn(
-              "px-2.5 py-1 rounded-full text-xs font-semibold",
-              p >= 0.5
-                ? "bg-success/12 text-success-foreground"
-                : "bg-destructive/12 text-destructive"
-            )}
-          >
-            {o}: {(p * 100).toFixed(0)}%
-          </span>
-        );
-      })}
+      {paired.slice(0, limit).map((item, i) => (
+        <span
+          key={item.outcome}
+          className={cn(
+            "px-2.5 py-1 rounded-full text-xs font-semibold",
+            item.price >= 0.5
+              ? "bg-success/12 text-success-foreground"
+              : i < COLORS.length
+              ? COLORS[i]
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          {item.outcome}: {(item.price * 100).toFixed(0)}%
+        </span>
+      ))}
+      {paired.length > limit && (
+        <span className="px-2 py-1 rounded-full text-xs text-muted-foreground bg-muted/50">
+          +{paired.length - limit} more
+        </span>
+      )}
     </div>
   );
 };
