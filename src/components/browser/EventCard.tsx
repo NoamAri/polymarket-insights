@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronRight, ArrowRight } from "lucide-react";
 import type { PolymarketEvent } from "@/types/polymarket";
 import { formatVolume } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import MarketRow from "./MarketRow";
 
 interface EventCardProps {
