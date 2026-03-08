@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { addIcon } from "@/lib/icons";
 
 interface OddsTagsProps {
   outcomes: string[];
@@ -17,9 +18,10 @@ const COLORS = [
 ];
 
 const OddsTags = ({ outcomes, prices, limit = 6, className }: OddsTagsProps) => {
-  // Sort by probability descending but keep original pairs
   const paired = outcomes.map((o, i) => ({ outcome: o, price: prices[i] || 0 }));
   paired.sort((a, b) => b.price - a.price);
+
+  const isMulti = outcomes.length > 2 || !outcomes.every(o => ["yes", "no"].includes(o.toLowerCase()));
 
   return (
     <div className={cn("flex gap-2 flex-wrap", className)}>
@@ -28,14 +30,16 @@ const OddsTags = ({ outcomes, prices, limit = 6, className }: OddsTagsProps) => 
           key={item.outcome}
           className={cn(
             "px-2.5 py-1 rounded-full text-xs font-semibold",
-            item.price >= 0.5
+            i === 0 && item.price > 0.2 && isMulti
+              ? "bg-success/15 text-success-foreground border border-success/25"
+              : item.price >= 0.5
               ? "bg-success/12 text-success-foreground"
               : i < COLORS.length
               ? COLORS[i]
               : "bg-muted text-muted-foreground"
           )}
         >
-          {item.outcome}: {(item.price * 100).toFixed(0)}%
+          {isMulti ? addIcon(item.outcome) : item.outcome}: {(item.price * 100).toFixed(0)}%
         </span>
       ))}
       {paired.length > limit && (
