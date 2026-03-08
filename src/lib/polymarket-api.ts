@@ -1,7 +1,13 @@
+import { supabase } from "@/integrations/supabase/client";
 import type { PolymarketEvent, PolymarketMarket, CategoryInfo, PricePoint } from "@/types/polymarket";
 
-const GAMMA_API = "https://gamma-api.polymarket.com";
-const CLOB_API = "https://clob.polymarket.com";
+async function proxyFetch(endpoint: string, params?: Record<string, string>) {
+  const { data, error } = await supabase.functions.invoke("polymarket-proxy", {
+    body: { endpoint, params },
+  });
+  if (error) throw new Error(error.message || "Proxy fetch failed");
+  return data;
+}
 
 function parseMarket(raw: any): PolymarketMarket {
   let outcomes: string[] = [];
@@ -61,10 +67,14 @@ function parseEvent(raw: any): PolymarketEvent {
 }
 
 export async function fetchTopCategories(limit = 14): Promise<CategoryInfo[]> {
-  // Fetch a large batch of events and extract unique tags
-  const res = await fetch(`${GAMMA_API}/events?limit=100&active=true&order=volume24hr&ascending=false`);
-  if (!res.ok) throw new Error("Failed to fetch events for categories");
-  const events = await res.json();
+  const events = await proxyFetch("gamma/events", {
+    limit: "100",
+    active: "true",
+    order: "volume24hr",
+    ascending: "false",
+  });
+
+  if (!Array.isArray(events)) return [];
 
   const tagCount = new Map<string, { label: string; slug: string; count: number }>();
   for (const ev of events) {
@@ -89,33 +99,41 @@ export async function fetchEventsByCategory(tagSlug: string, maxPages = 5): Prom
   const allEvents: PolymarketEvent[] = [];
   for (let page = 0; page < maxPages; page++) {
     const offset = page * 20;
-    const res = await fetch(
-      `${GAMMA_API}/events?tag=${tagSlug}&limit=20&offset=${offset}&order=volume24hr&ascending=false`
-    );
-    if (!res.ok) break;
-    const data = await res.json();
-    if (!data || data.length === 0) break;
-    allEvents.push(...data.map(parseEvent));
+    try {
+      const data = await proxyFetch("gamma/events", {
+        tag: tagSlug,
+        limit: "20",
+        offset: String(offset),
+        order: "volume24hr",
+        ascending: "false",
+      });
+      if (!Array.isArray(data) || data.length === 0) break;
+      allEvents.push(...data.map(parseEvent));
+    } catch {
+      break;
+    }
   }
   return allEvents;
 }
 
 export async function fetchNewspaperEvents(limit = 15): Promise<PolymarketEvent[]> {
-  const res = await fetch(
-    `${GAMMA_API}/events?limit=${limit}&active=true&order=volume24hr&ascending=false`
-  );
-  if (!res.ok) throw new Error("Failed to fetch newspaper events");
-  const data = await res.json();
+  const data = await proxyFetch("gamma/events", {
+    limit: String(limit),
+    active: "true",
+    order: "volume24hr",
+    ascending: "false",
+  });
+  if (!Array.isArray(data)) return [];
   return data.map(parseEvent);
 }
 
 export async function fetchPriceHistory(tokenId: string, fidelity = 60): Promise<PricePoint[]> {
   try {
-    const res = await fetch(
-      `${CLOB_API}/prices-history?market=${tokenId}&interval=all&fidelity=${fidelity}`
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await proxyFetch("clob/prices-history", {
+      market: tokenId,
+      interval: "all",
+      fidelity: String(fidelity),
+    });
     return (data.history || []).map((h: any) => ({ t: h.t, p: Number(h.p) }));
   } catch {
     return [];
