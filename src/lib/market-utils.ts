@@ -12,9 +12,6 @@ function isBinaryYesNo(outcomes: string[]): boolean {
 
 /**
  * Check if an event represents a multi-outcome market.
- * True when:
- * - A single market has named (non-Yes/No) outcomes, OR
- * - The event has multiple sub-markets (each = one candidate/team)
  */
 export function isMultiOutcome(event: PolymarketEvent): boolean {
   if (!event.markets.length) return false;
@@ -31,10 +28,64 @@ export interface OutcomeEntry {
 }
 
 /**
+ * Extract the key differentiator from a multi-market question.
+ * Examples:
+ *  "Will the price of Bitcoin be above $62,000 on March 8?" → "$62,000"
+ *  "Will Arsenal win the 2025–26 English Premier League?" → "Arsenal"
+ *  "Will there be no change in Fed interest rates..." → "No change"
+ *  "Will Gavin Newsom win the 2028 Democratic..." → "Gavin Newsom"
+ */
+function extractShortLabel(question: string, eventTitle: string): string {
+  // 1. Price thresholds: "$62,000", "$2.88", etc.
+  const priceMatch = question.match(/\$[\d,]+(?:\.\d+)?/);
+  if (priceMatch) {
+    // Also try to grab a date context if present
+    const dateMatch = question.match(/on\s+((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d+)/i);
+    if (dateMatch && !eventTitle.toLowerCase().includes(dateMatch[1].toLowerCase())) {
+      return `${priceMatch[0]} (${dateMatch[1]})`;
+    }
+    return priceMatch[0];
+  }
+
+  // 2. Temperature thresholds
+  const tempMatch = question.match(/(\d+°[CF])/);
+  if (tempMatch) return tempMatch[1];
+
+  // 3. "Will [ENTITY] win/be..." pattern — extract entity name
+  const willMatch = question.match(/^Will\s+(.+?)\s+(?:win|be\s+the|become|get|receive|finish)/i);
+  if (willMatch) {
+    let entity = willMatch[1].trim();
+    // Clean up "the price of X" patterns
+    entity = entity.replace(/^the\s+price\s+of\s+/i, "");
+    // Clean "there be no" → "No"
+    if (/^there\s+be\s+no/i.test(entity)) {
+      const noMatch = question.match(/^Will\s+there\s+be\s+no\s+(.+?)(?:\s+(?:in|after|on|by|from))/i);
+      return noMatch ? `No ${noMatch[1]}` : entity;
+    }
+    // If too long, truncate
+    if (entity.length > 30) entity = entity.slice(0, 28) + "…";
+    return entity;
+  }
+
+  // 4. Date-based: extract date from question
+  const dateOnly = question.match(/((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d+(?:,?\s+\d{4})?)/i);
+  if (dateOnly) return dateOnly[1];
+
+  // 5. Time range: "5:15AM-5:30AM ET"
+  const timeMatch = question.match(/(\d{1,2}:\d{2}[AP]M\s*-\s*\d{1,2}:\d{2}[AP]M)/i);
+  if (timeMatch) return timeMatch[1];
+
+  // 6. Fallback: use the question but trim common prefixes and truncate
+  let label = question
+    .replace(/^Will\s+/i, "")
+    .replace(/\?$/, "")
+    .trim();
+  if (label.length > 35) label = label.slice(0, 33) + "…";
+  return label;
+}
+
+/**
  * Get all outcomes with probabilities from an event.
- * - For single-market with named outcomes: use those directly
- * - For multi-market events: extract "Yes" price from each sub-market's question
- * - For standard binary: return outcomes as-is
  */
 export function getAllOutcomes(event: PolymarketEvent): OutcomeEntry[] {
   if (!event.markets.length) return [];
@@ -50,14 +101,14 @@ export function getAllOutcomes(event: PolymarketEvent): OutcomeEntry[] {
     return result.sort((a, b) => b.prob - a.prob);
   }
 
-  // Multi-market event: each sub-market is a candidate
+  // Multi-market event: each sub-market is a candidate — extract short labels
   if (event.markets.length > 1) {
     const result: OutcomeEntry[] = [];
     for (const m of event.markets) {
       const yesIdx = m.outcomes.findIndex((o) => o.trim().toLowerCase() === "yes");
       const yesPrice = yesIdx >= 0 ? (m.outcomePrices[yesIdx] || 0) : 0;
       result.push({
-        name: m.question,
+        name: extractShortLabel(m.question, event.title),
         prob: yesPrice,
         image: m.image,
       });
