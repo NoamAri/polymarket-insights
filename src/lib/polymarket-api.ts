@@ -127,6 +127,27 @@ export async function fetchNewspaperEvents(limit = 15): Promise<PolymarketEvent[
   return data.map(parseEvent);
 }
 
+export async function fetchBulkEvents(pages = 10): Promise<PolymarketEvent[]> {
+  const allEvents: PolymarketEvent[] = [];
+  for (let page = 0; page < pages; page++) {
+    try {
+      const data = await proxyFetch("gamma/events", {
+        limit: "100",
+        offset: String(page * 100),
+        order: "volume24hr",
+        ascending: "false",
+      });
+      if (!Array.isArray(data) || data.length === 0) break;
+      allEvents.push(...data.map(parseEvent));
+      // Small delay to be polite to the API
+      if (page < pages - 1) await new Promise(r => setTimeout(r, 300));
+    } catch {
+      break;
+    }
+  }
+  return allEvents;
+}
+
 export async function fetchPriceHistory(tokenId: string, fidelity = 60): Promise<PricePoint[]> {
   try {
     const data = await proxyFetch("clob/prices-history", {

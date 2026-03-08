@@ -4,6 +4,7 @@ import {
   fetchEventsByCategory,
   fetchNewspaperEvents,
   fetchPriceHistory,
+  fetchBulkEvents,
 } from "@/lib/polymarket-api";
 import { generateArticles } from "@/lib/articles";
 import type { PolymarketEvent, ArticleMap } from "@/types/polymarket";
