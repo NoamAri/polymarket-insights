@@ -3,6 +3,7 @@ import type { PolymarketEvent } from "@/types/polymarket";
 import { formatVolume } from "@/lib/format";
 import { isMultiOutcome, getAllOutcomes } from "@/lib/market-utils";
 import { addIcon } from "@/lib/icons";
+import { useTeamLogos } from "@/hooks/useTeamLogos";
 import OddsTags from "./OddsTags";
 import BetDialog from "./BetDialog";
 
@@ -17,6 +18,9 @@ const CompactCard = ({ event, onExplore }: CompactCardProps) => {
   const multi = isMultiOutcome(event);
   const allOutcomes = getAllOutcomes(event);
 
+  const outcomeNames = multi ? allOutcomes.slice(0, 3).map((o) => o.name) : [];
+  const logos = useTeamLogos(outcomeNames);
+
   return (
     <>
       <div className="bg-card/30 border border-border/50 rounded-lg p-4 mb-3 hover:border-primary/30 transition-colors">
@@ -30,16 +34,28 @@ const CompactCard = ({ event, onExplore }: CompactCardProps) => {
         </div>
         {multi ? (
           <div className="space-y-0.5 mb-1">
-            {allOutcomes.slice(0, 3).map((o, i) => (
-              <div key={o.name} className="flex items-center justify-between text-xs">
-                <span className={i === 0 ? "text-success-foreground font-semibold" : "text-muted-foreground"}>
-                  {addIcon(o.name.length > 25 ? o.name.slice(0, 25) + "…" : o.name)}
-                </span>
-                <span className={i === 0 ? "text-success-foreground font-bold" : "text-primary font-medium"}>
-                  {(o.prob * 100).toFixed(0)}%
-                </span>
-              </div>
-            ))}
+            {allOutcomes.slice(0, 3).map((o, i) => {
+              const logoUrl = logos[o.name];
+              return (
+                <div key={o.name} className="flex items-center justify-between text-xs">
+                  <span className={`inline-flex items-center gap-1.5 ${i === 0 ? "text-success-foreground font-semibold" : "text-muted-foreground"}`}>
+                    {logoUrl && (
+                      <img
+                        src={logoUrl + "/tiny"}
+                        alt={o.name}
+                        className="w-4 h-4 rounded-sm object-contain"
+                        loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
+                    {addIcon(o.name.length > 25 ? o.name.slice(0, 25) + "…" : o.name)}
+                  </span>
+                  <span className={i === 0 ? "text-success-foreground font-bold" : "text-primary font-medium"}>
+                    {(o.prob * 100).toFixed(0)}%
+                  </span>
+                </div>
+              );
+            })}
             {allOutcomes.length > 3 && (
               <span className="text-[0.65rem] text-muted-foreground/40">+{allOutcomes.length - 3} more</span>
             )}

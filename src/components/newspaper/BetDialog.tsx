@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { formatVolume, formatPercent } from "@/lib/format";
+import { useTeamLogos } from "@/hooks/useTeamLogos";
 import type { PolymarketEvent } from "@/types/polymarket";
 
 interface BetDialogProps {
@@ -17,10 +18,14 @@ const BetDialog = ({ event, open, onOpenChange }: BetDialogProps) => {
   const [betAmount, setBetAmount] = useState(100);
 
   const mkt = event.markets[selectedMarketIdx];
-  if (!mkt) return null;
+  const paired = mkt
+    ? mkt.outcomes.map((o, i) => ({ outcome: o, price: mkt.outcomePrices[i] || 0 })).sort((a, b) => b.price - a.price)
+    : [];
 
-  const paired = mkt.outcomes.map((o, i) => ({ outcome: o, price: mkt.outcomePrices[i] || 0 }));
-  paired.sort((a, b) => b.price - a.price);
+  const outcomeNames = paired.filter(p => !["yes", "no"].includes(p.outcome.toLowerCase())).map(p => p.outcome);
+  const logos = useTeamLogos(outcomeNames);
+
+  if (!mkt) return null;
 
   const chosen = chosenOutcome || paired[0]?.outcome || "";
   const chosenPrice = paired.find((p) => p.outcome === chosen)?.price || 0;
@@ -45,7 +50,6 @@ const BetDialog = ({ event, open, onOpenChange }: BetDialogProps) => {
           </div>
         </DialogHeader>
 
-        {/* Market selector if multiple markets */}
         {event.markets.length > 1 && (
           <div className="flex gap-2 flex-wrap">
             {event.markets.map((m, i) => (
@@ -65,36 +69,48 @@ const BetDialog = ({ event, open, onOpenChange }: BetDialogProps) => {
           </div>
         )}
 
-        {/* All outcomes as clickable cards */}
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             Pick your outcome
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {paired.map((item) => (
-              <button
-                key={item.outcome}
-                onClick={() => setChosenOutcome(item.outcome)}
-                className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border text-left transition-all",
-                  chosen === item.outcome
-                    ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                    : "border-border/50 bg-background/50 hover:border-primary/30"
-                )}
-              >
-                <span className="text-sm font-medium text-foreground truncate mr-2">{item.outcome}</span>
-                <span className={cn(
-                  "text-sm font-bold shrink-0",
-                  item.price >= 0.6 ? "text-success-foreground" : item.price <= 0.2 ? "text-destructive" : "text-primary"
-                )}>
-                  {formatPercent(item.price)}
-                </span>
-              </button>
-            ))}
+            {paired.map((item) => {
+              const logoUrl = logos[item.outcome];
+              return (
+                <button
+                  key={item.outcome}
+                  onClick={() => setChosenOutcome(item.outcome)}
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border text-left transition-all",
+                    chosen === item.outcome
+                      ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                      : "border-border/50 bg-background/50 hover:border-primary/30"
+                  )}
+                >
+                  <span className="text-sm font-medium text-foreground truncate mr-2 inline-flex items-center gap-1.5">
+                    {logoUrl && (
+                      <img
+                        src={logoUrl + "/tiny"}
+                        alt={item.outcome}
+                        className="w-5 h-5 rounded-sm object-contain flex-shrink-0"
+                        loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
+                    {item.outcome}
+                  </span>
+                  <span className={cn(
+                    "text-sm font-bold shrink-0",
+                    item.price >= 0.6 ? "text-success-foreground" : item.price <= 0.2 ? "text-destructive" : "text-primary"
+                  )}>
+                    {formatPercent(item.price)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Bet calculator */}
         <div className="border-t border-border pt-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             💰 Bet Calculator — "{chosen}"
