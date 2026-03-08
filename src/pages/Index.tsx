@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNewspaperEvents, useArticles } from "@/hooks/usePolymarket";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import type { PolymarketEvent } from "@/types/polymarket";
 import Masthead from "@/components/newspaper/Masthead";
 import TickerBar from "@/components/newspaper/TickerBar";
 import LeadStory from "@/components/newspaper/LeadStory";
@@ -13,11 +15,16 @@ import SectionHeader from "@/components/newspaper/SectionHeader";
 
 const Index = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: events, isLoading: eventsLoading } = useNewspaperEvents();
   const { data: articles, isLoading: articlesLoading } = useArticles(events);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["polymarket"] });
+  };
+
+  const handleExplore = (event: PolymarketEvent) => {
+    navigate("/browse", { state: { featuredEvent: event } });
   };
 
   if (eventsLoading) {
@@ -67,14 +74,14 @@ const Index = () => {
         </Button>
       </div>
 
-      <LeadStory event={lead} article={getArticle(lead.id)} />
+      <LeadStory event={lead} article={getArticle(lead.id)} onExplore={handleExplore} />
 
       {topStories.length > 0 && (
         <>
           <SectionHeader>TOP STORIES</SectionHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topStories.map((ev) => (
-              <ArticleCard key={ev.id} event={ev} article={getArticle(ev.id)} />
+              <ArticleCard key={ev.id} event={ev} article={getArticle(ev.id)} onExplore={handleExplore} />
             ))}
           </div>
         </>
@@ -85,7 +92,7 @@ const Index = () => {
           <SectionHeader>MARKET WATCH</SectionHeader>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {marketWatch.map((ev) => (
-              <CompactCard key={ev.id} event={ev} />
+              <CompactCard key={ev.id} event={ev} onExplore={handleExplore} />
             ))}
           </div>
         </>
@@ -95,7 +102,7 @@ const Index = () => {
         <>
           <SectionHeader>HOT TAKES</SectionHeader>
           {hotTakes.map((ev) => (
-            <HotTake key={ev.id} event={ev} article={getArticle(ev.id)} />
+            <HotTake key={ev.id} event={ev} article={getArticle(ev.id)} onExplore={handleExplore} />
           ))}
         </>
       )}
@@ -103,7 +110,10 @@ const Index = () => {
       <div className="border-t border-border mt-12 pt-4 text-center">
         <p className="text-xs text-muted-foreground/40">
           The Polymarket Chronicle • Live market data •{" "}
-          {articlesLoading ? "Generating articles…" : "AI-generated via Gemini"}
+          {articlesLoading ? "Generating articles…" : "AI-generated via Lovable AI"}
+        </p>
+        <p className="text-[0.65rem] text-muted-foreground/25 mt-1">
+          Odds are not guarantees. Past market performance does not predict future outcomes.
         </p>
       </div>
     </div>
