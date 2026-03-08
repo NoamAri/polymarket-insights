@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import KPIRow from "./KPIRow";
+import EventCard from "./EventCard";
 import { formatVolume } from "@/lib/format";
 import { useBulkEvents } from "@/hooks/usePolymarket";
 import type { PolymarketEvent } from "@/types/polymarket";
@@ -145,26 +146,7 @@ const AnalyticsView = () => {
       <p className="text-xs text-muted-foreground mb-4">Showing {Math.min(filtered.length, 20)} of {filtered.length} events</p>
       <div className="space-y-3">
         {filtered.slice(0, 20).map((ev) => (
-          <div key={ev.id} className="bg-[image:var(--gradient-card)] border border-border rounded-2xl p-4 hover:border-primary/20 transition-colors">
-            <div className="flex items-start gap-3">
-              {ev.image && <img src={ev.image} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground mb-1">{ev.title}</p>
-                <div className="flex gap-2 flex-wrap">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ev.closed ? "bg-muted text-muted-foreground" : "bg-primary/15 text-primary"}`}>
-                    {ev.closed ? "Resolved" : "🟢 Active"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-secondary/12 text-secondary">💰 {formatVolume(ev.volume)}</span>
-                  {ev.markets.length > 1 && (
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-accent/12 text-accent-foreground">{ev.markets.length} markets</span>
-                  )}
-                  {ev.tags?.slice(0, 2).map((t) => (
-                    <span key={t.slug} className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">{t.label}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <EventCard key={ev.id} event={ev} />
         ))}
       </div>
     </div>
