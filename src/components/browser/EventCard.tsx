@@ -13,6 +13,7 @@ interface EventCardProps {
 
 const EventCard = ({ event }: EventCardProps) => {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
   const isClosed = event.closed;
   const markets = event.markets;
 
