@@ -105,7 +105,7 @@ const EventDetail = () => {
         🏪 Markets
       </h2>
       <div className="space-y-3">
-        {event.markets.map((mkt, i) => {
+        {event.markets.filter((m) => m.volume > 0).map((mkt, i) => {
           const isExpanded = expandedMarket === i;
           const winner = mkt.closed ? deriveWinner(mkt.outcomes, mkt.outcomePrices) : null;
 
