@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import KPIRow from "./KPIRow";
+import EventCard from "./EventCard";
 import { formatVolume } from "@/lib/format";
 import { useBulkEvents } from "@/hooks/usePolymarket";
 import type { PolymarketEvent } from "@/types/polymarket";
