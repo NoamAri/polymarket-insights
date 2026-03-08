@@ -40,6 +40,14 @@ const EventCard = ({ event }: EventCardProps) => {
             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/12 text-primary">
               {markets.length} market{markets.length !== 1 ? "s" : ""}
             </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto text-xs"
+              onClick={(e) => { e.stopPropagation(); navigate("/event", { state: { event } }); }}
+            >
+              Explore <ArrowRight className="w-3 h-3" />
+            </Button>
           </div>
           {tagLabels.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
