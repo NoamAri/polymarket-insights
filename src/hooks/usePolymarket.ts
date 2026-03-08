@@ -51,3 +51,11 @@ export function usePriceHistory(tokenId: string | null) {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export function useBulkEvents(pages = 5) {
+  return useQuery({
+    queryKey: ["polymarket", "bulk-events", pages],
+    queryFn: () => fetchBulkEvents(pages),
+    staleTime: 10 * 60 * 1000,
+  });
+}
