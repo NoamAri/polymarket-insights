@@ -4,6 +4,7 @@ import {
   fetchEventsByCategory,
   fetchNewspaperEvents,
   fetchPriceHistory,
+  fetchBulkEvents,
 } from "@/lib/polymarket-api";
 import { generateArticles } from "@/lib/articles";
 import type { PolymarketEvent, ArticleMap } from "@/types/polymarket";
@@ -48,5 +49,13 @@ export function usePriceHistory(tokenId: string | null) {
     queryFn: () => fetchPriceHistory(tokenId!),
     enabled: !!tokenId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useBulkEvents(pages = 5) {
+  return useQuery({
+    queryKey: ["polymarket", "bulk-events", pages],
+    queryFn: () => fetchBulkEvents(pages),
+    staleTime: 10 * 60 * 1000,
   });
 }
