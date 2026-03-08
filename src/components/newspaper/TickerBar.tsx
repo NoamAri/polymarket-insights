@@ -1,4 +1,6 @@
 import type { PolymarketEvent } from "@/types/polymarket";
+import { isMultiOutcome, getAllOutcomes } from "@/lib/market-utils";
+import { addIcon } from "@/lib/icons";
 import { getTopOutcome } from "@/lib/format";
 
 interface TickerBarProps {
@@ -7,12 +9,24 @@ interface TickerBarProps {
 
 const TickerBar = ({ events }: TickerBarProps) => {
   const items = events.slice(0, 8).map((ev) => {
+    const multi = isMultiOutcome(ev);
+    if (multi) {
+      const allOutcomes = getAllOutcomes(ev);
+      if (!allOutcomes.length) return null;
+      const top = allOutcomes[0];
+      return {
+        title: ev.title.slice(0, 30),
+        outcome: top.name.length > 20 ? top.name.slice(0, 20) + "…" : top.name,
+        prob: top.prob,
+        isMulti: true,
+        image: ev.icon || ev.image,
+      };
+    }
     const mkt = ev.markets[0];
     if (!mkt) return null;
     const { outcome, prob } = getTopOutcome(mkt.outcomes, mkt.outcomePrices);
     if (!outcome || !prob) return null;
-    const isMulti = mkt.outcomes.length > 2;
-    return { title: ev.title.slice(0, 40), outcome, prob, isMulti, image: ev.icon || ev.image };
+    return { title: ev.title.slice(0, 40), outcome, prob, isMulti: false, image: ev.icon || ev.image };
   }).filter(Boolean);
 
   if (items.length === 0) return null;
@@ -26,7 +40,7 @@ const TickerBar = ({ events }: TickerBarProps) => {
               <img src={item!.image} alt="" className="w-4 h-4 rounded-sm object-cover inline-block" />
             )}
             <span className={item!.prob >= 0.6 ? "text-success-foreground" : item!.prob <= 0.4 ? "text-destructive" : "text-primary"}>
-              {item!.title} • {item!.outcome} {(item!.prob * 100).toFixed(0)}%
+              {item!.title} • {item!.isMulti ? addIcon(item!.outcome) : item!.outcome} {(item!.prob * 100).toFixed(0)}%
               {item!.isMulti && " ⚡"}
             </span>
           </span>
