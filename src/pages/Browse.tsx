@@ -1,5 +1,10 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTopCategories, useEventsByCategory } from "@/hooks/usePolymarket";
+import type { PolymarketEvent } from "@/types/polymarket";
+import { isMultiOutcome, getAllOutcomes } from "@/lib/market-utils";
+import MultiOutcomeGrid from "@/components/newspaper/MultiOutcomeGrid";
+import BetDialog from "@/components/newspaper/BetDialog";
 import { formatVolume } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
