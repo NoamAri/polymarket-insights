@@ -24,7 +24,7 @@ const Index = () => {
   };
 
   const handleExplore = (event: PolymarketEvent) => {
-    navigate("/browse", { state: { featuredEvent: event } });
+    navigate("/event", { state: { event } });
   };
 
   if (eventsLoading) {

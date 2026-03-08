@@ -29,6 +29,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/browse" element={<Browse />} />
+                  <Route path="/event" element={<EventDetail />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
